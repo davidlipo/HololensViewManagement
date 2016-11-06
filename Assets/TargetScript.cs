@@ -4,9 +4,8 @@ using UnityEditor;
 using Vuforia;
 
 public class TargetScript : MonoBehaviour {
-    public Vector3 screenPos;
-    public Rect bounds;
-    public Texture aTexture;
+    private Vector3 screenPos;
+    private Rect bounds;
     bool isOnScreen;
 
     void Start()
@@ -14,24 +13,18 @@ public class TargetScript : MonoBehaviour {
         isOnScreen = true;
     }
 	
-	// Update is called once per frame
 	void Update() {
         if (isOnScreen)
         {
+            // DO WE NEED THIS?
             screenPos = Camera.main.WorldToScreenPoint(transform.position);
-            bounds = GUIRectWithObject(gameObject);
-            print(bounds);
-            print(screenPos);
+            bounds = GUIRectWithObject(transform.FindChild("Cube").gameObject);
         }
     }
 
-    void OnGUI()
+    Rect getBounds()
     {
-        if(isOnScreen && aTexture)
-        {
-            //GUI.DrawTexture(new Rect(screenPos.x, Screen.height - screenPos.y, 60, 60), aTexture);
-            GUI.DrawTexture(bounds, aTexture);
-        }
+        return bounds;
     }
 
     //http://answers.unity3d.com/questions/49943/is-there-an-easy-way-to-get-on-screen-render-size.html

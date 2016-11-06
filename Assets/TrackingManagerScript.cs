@@ -3,6 +3,8 @@ using System.Collections;
 
 public class TrackingManagerScript : MonoBehaviour {
 
+    private GameObject[] trackedObjs;
+
 	// Use this for initialization
 	void Start () {
 	
@@ -10,8 +12,16 @@ public class TrackingManagerScript : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-        //GameObject.Find("CubeObj").transform.position = GameObject.Find("MHCD").transform.position;
-        //GameObject.Find("CubeObj").transform.rotation = GameObject.Find("MHCD").transform.rotation;
-        //print(GameObject.Find("MHCD").transform.position);
+        trackedObjs = GameObject.FindGameObjectsWithTag("TrackedObj");
     }
+
+    /*void OnGUI()
+    {
+        if (isOnScreen && aTexture)
+        {
+            //GUI.DrawTexture(new Rect(screenPos.x, Screen.height - screenPos.y, 60, 60), aTexture);
+            GUI.color = new Color(1.0f, 1.0f, 1.0f, 0.25f);
+            GUI.DrawTexture(bounds, aTexture);
+        }
+    }*/
 }
