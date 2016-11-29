@@ -8,19 +8,51 @@ public class TrackingManagerScript : MonoBehaviour {
     private int width;
     private int height;
     private int[,] pixels;
-    public Texture aTexture;
+    public GameObject label;
+    private GameObject addedLabel;
+    private Vector2 locationToUse;
 
     // Use this for initialization
     void Start () {
         width = Screen.width;
         height = Screen.height;
-	}
+        addedLabel = (GameObject)Instantiate(label, new Vector3(0,0,0), Quaternion.identity);
+    }
 
     // Update is called once per frame
     void Update() {
         trackedObjs = GameObject.FindGameObjectsWithTag("TrackedObj");
 
         pixels = generatePixelMap();
+
+        if (!isCurrentLocationEmtpy(100, 200))
+        {
+            print("Update");
+            Rect rect = trackedObjs[0].GetComponent<TargetScript>().getBounds();
+            locationToUse = placeLabel(100, 200, rect.center);
+            Vector3 worldLocation = Camera.main.ScreenToWorldPoint(new Vector3(locationToUse.x, Screen.height - locationToUse.y, 2.0f));
+            addedLabel.transform.position = worldLocation;
+        }
+        addedLabel.transform.rotation = Quaternion.LookRotation(-Camera.main.transform.up, -Camera.main.transform.forward);
+    }
+
+    bool isCurrentLocationEmtpy(int aimHeight, int aimWidth)
+    {
+        if(locationToUse == null)
+        {
+            return false;
+        }
+        for (int k = (int)locationToUse.y; k < (int)locationToUse.y + aimHeight; k++)
+        {
+            for (int l = (int)locationToUse.x; l < (int)locationToUse.x + aimWidth; l++)
+            {
+                if (pixels[k, l] == 1)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     int[,] generatePixelMap()
@@ -89,15 +121,6 @@ public class TrackingManagerScript : MonoBehaviour {
         int emptiestBlockColumn = emptiestBlock % noColumns;
         int emptiestBlockRow = emptiestBlock / noColumns;
 
-        return new Vector2(emptiestBlockColumn * aimWidth, emptiestBlockRow * aimHeight);
-    }
-
-    void OnGUI()
-    {
-        Rect rect = trackedObjs[0].GetComponent<TargetScript>().getBounds();
-        Vector2 locationToUse = placeLabel(100, 100, rect.center);
-        GUI.DrawTexture(new Rect(locationToUse.x, locationToUse.y, 100, 100), aTexture);
-        //GUI.color = new Color(1.0f, 1.0f, 1.0f, 0.25f);
-        //GUI.DrawTexture(bounds, aTexture);
+        return new Vector2(emptiestBlockColumn * aimWidth + aimWidth / 2, emptiestBlockRow * aimHeight + aimHeight / 2);
     }
 }
