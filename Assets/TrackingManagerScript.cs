@@ -27,11 +27,11 @@ public class TrackingManagerScript : MonoBehaviour {
 
         if (!isCurrentLocationEmtpy(100, 200))
         {
-            print("Update");
             Rect rect = trackedObjs[0].GetComponent<TargetScript>().getBounds();
             locationToUse = placeLabel(100, 200, rect.center);
             Vector3 worldLocation = Camera.main.ScreenToWorldPoint(new Vector3(locationToUse.x, Screen.height - locationToUse.y, 2.0f));
             addedLabel.transform.position = worldLocation;
+            addedLabel.transform.parent = trackedObjs[0].transform;
         }
         addedLabel.transform.rotation = Quaternion.LookRotation(-Camera.main.transform.up, -Camera.main.transform.forward);
     }
