@@ -10,7 +10,6 @@ public class TrackingManagerScript : MonoBehaviour {
     private int[,] pixels;
     public GameObject label;
     private GameObject addedLabel;
-    private Vector2 locationToUse;
 
     // Use this for initialization
     void Start () {
@@ -25,23 +24,31 @@ public class TrackingManagerScript : MonoBehaviour {
 
         pixels = generatePixelMap();
 
-        if (!isCurrentLocationEmtpy(100, 200))
+        Vector2 currentLocation = Camera.main.WorldToScreenPoint(addedLabel.transform.position);
+
+        if (!isCurrentLocationEmtpy(100, 200, currentLocation))
         {
             Rect rect = trackedObjs[0].GetComponent<TargetScript>().getBounds();
-            locationToUse = placeLabel(100, 200, rect.center);
-            Vector3 worldLocation = Camera.main.ScreenToWorldPoint(new Vector3(locationToUse.x, Screen.height - locationToUse.y, 2.0f));
+            Vector2 locationToUse = placeLabel(100, 200, rect.center);
+            float distanceToPlace = Vector3.Distance(Camera.main.transform.position, trackedObjs[0].transform.position);
+            Vector3 worldLocation = Camera.main.ScreenToWorldPoint(new Vector3(locationToUse.x, locationToUse.y, distanceToPlace));
             addedLabel.transform.position = worldLocation;
             addedLabel.transform.parent = trackedObjs[0].transform;
         }
         addedLabel.transform.rotation = Quaternion.LookRotation(-Camera.main.transform.up, -Camera.main.transform.forward);
     }
 
-    bool isCurrentLocationEmtpy(int aimHeight, int aimWidth)
+    bool isCurrentLocationEmtpy(int aimHeight, int aimWidth, Vector2 locationToUse)
     {
-        if(locationToUse == null)
+        if(locationToUse == null ||
+           locationToUse.x > Screen.width - aimWidth ||
+           locationToUse.x < 0 ||
+           locationToUse.y > Screen.height - aimHeight ||
+           locationToUse.y < 0)
         {
             return false;
         }
+        
         for (int k = (int)locationToUse.y; k < (int)locationToUse.y + aimHeight; k++)
         {
             for (int l = (int)locationToUse.x; l < (int)locationToUse.x + aimWidth; l++)
