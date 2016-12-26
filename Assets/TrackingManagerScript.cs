@@ -21,13 +21,14 @@ public class TrackingManagerScript : MonoBehaviour {
     // Update is called once per frame
     void Update() {
         trackedObjs = GameObject.FindGameObjectsWithTag("TrackedObj");
-
         pixels = generatePixelMap();
 
         Vector2 currentLocation = Camera.main.WorldToScreenPoint(addedLabel.transform.position);
 
+        //Debug.Log("Label: " + currentLocation);
         if (!isCurrentLocationEmtpy(100, 200, currentLocation))
         {
+            Debug.Log("Collision");
             Rect rect = trackedObjs[0].GetComponent<TargetScript>().getBounds();
             Vector2 locationToUse = placeLabel(100, 200, rect.center);
             float distanceToPlace = Vector3.Distance(Camera.main.transform.position, trackedObjs[0].transform.position);
