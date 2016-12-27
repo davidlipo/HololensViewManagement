@@ -10,12 +10,14 @@ public class TrackingManagerScript : MonoBehaviour {
     private int[,] pixels;
     public GameObject label;
     private GameObject addedLabel;
+    private Camera cam;
 
     // Use this for initialization
     void Start () {
         width = Screen.width;
         height = Screen.height;
         addedLabel = (GameObject)Instantiate(label, new Vector3(0,0,0), Quaternion.identity);
+        cam = GameObject.FindWithTag("ARCamera").transform.GetChild(1).GetComponent<Camera>();
     }
 
     // Update is called once per frame
@@ -23,16 +25,15 @@ public class TrackingManagerScript : MonoBehaviour {
         trackedObjs = GameObject.FindGameObjectsWithTag("TrackedObj");
         pixels = generatePixelMap();
 
-        Vector2 currentLocation = Camera.main.WorldToScreenPoint(addedLabel.transform.position);
+        Vector2 currentLocation = cam.WorldToScreenPoint(addedLabel.transform.position);
 
-        //Debug.Log("Label: " + currentLocation);
         if (!isCurrentLocationEmtpy(100, 200, currentLocation))
         {
-            Debug.Log("Collision");
+            //Debug.Log("Collision");
             Rect rect = trackedObjs[0].GetComponent<TargetScript>().getBounds();
             Vector2 locationToUse = placeLabel(100, 200, rect.center);
             float distanceToPlace = Vector3.Distance(Camera.main.transform.position, trackedObjs[0].transform.position);
-            Vector3 worldLocation = Camera.main.ScreenToWorldPoint(new Vector3(locationToUse.x, locationToUse.y, distanceToPlace));
+            Vector3 worldLocation = cam.ScreenToWorldPoint(new Vector3(locationToUse.x, locationToUse.y, distanceToPlace));
             addedLabel.transform.position = worldLocation;
             addedLabel.transform.parent = trackedObjs[0].transform;
         }
