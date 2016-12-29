@@ -9,35 +9,50 @@ public class TrackingManagerScript : MonoBehaviour {
     private int height;
     private int[,] pixels;
     public GameObject label;
-    private GameObject addedLabel;
+    private GameObject[] objectLabels;
     private Camera cam;
+    private int delay = 0;
+
+    private const int DELAY_BETWEEN_CHECK = 20;
 
     // Use this for initialization
     void Start () {
         width = Screen.width;
         height = Screen.height;
-        addedLabel = (GameObject)Instantiate(label, new Vector3(0,0,0), Quaternion.identity);
-        cam = GameObject.FindWithTag("ARCamera").transform.GetChild(1).GetComponent<Camera>();
+        trackedObjs = GameObject.FindGameObjectsWithTag("TrackedObj");
+        objectLabels = new GameObject[trackedObjs.Length];
+        for (int i = 0; i < objectLabels.Length; i++)
+        {
+            objectLabels[i] = (GameObject)Instantiate(label, new Vector3(0, 0, 0), Quaternion.identity);
+            objectLabels[i].GetComponentInChildren<TextMesh>().text = i.ToString();
+        }
+        cam = GameObject.FindWithTag("ARCamera").transform.GetChild(1).GetComponent<Camera>(); // 0 if single camera, 1 is dual camera
     }
 
     // Update is called once per frame
     void Update() {
-        trackedObjs = GameObject.FindGameObjectsWithTag("TrackedObj");
+        delay++;
         pixels = generatePixelMap();
 
-        Vector2 currentLocation = cam.WorldToScreenPoint(addedLabel.transform.position);
-
-        if (!isCurrentLocationEmtpy(100, 200, currentLocation))
+        for (int i = 0; i < objectLabels.Length; i++)
         {
-            //Debug.Log("Collision");
-            Rect rect = trackedObjs[0].GetComponent<TargetScript>().getBounds();
-            Vector2 locationToUse = placeLabel(100, 200, rect.center);
-            float distanceToPlace = Vector3.Distance(Camera.main.transform.position, trackedObjs[0].transform.position);
-            Vector3 worldLocation = cam.ScreenToWorldPoint(new Vector3(locationToUse.x, locationToUse.y, distanceToPlace));
-            addedLabel.transform.position = worldLocation;
-            addedLabel.transform.parent = trackedObjs[0].transform;
+            if (delay > DELAY_BETWEEN_CHECK && !isCurrentLocationEmtpy(100, 200, cam.WorldToScreenPoint(objectLabels[i].transform.position)))
+            {
+                //Debug.Log("Collision");
+                Rect rect = trackedObjs[i].GetComponent<TargetScript>().getBounds();
+                Vector2 locationToUse = placeLabel(100, 200, rect.center);
+                float distanceToPlace = Vector3.Distance(Camera.main.transform.position, trackedObjs[i].transform.position);
+                Vector3 worldLocation = cam.ScreenToWorldPoint(new Vector3(locationToUse.x, locationToUse.y, distanceToPlace));
+                objectLabels[i].transform.position = worldLocation;
+                objectLabels[i].transform.parent = trackedObjs[i].transform;
+            }
+            objectLabels[i].transform.rotation = Quaternion.LookRotation(-Camera.main.transform.up, -Camera.main.transform.forward);
         }
-        addedLabel.transform.rotation = Quaternion.LookRotation(-Camera.main.transform.up, -Camera.main.transform.forward);
+
+        if (delay > DELAY_BETWEEN_CHECK)
+        {
+            delay = 0;
+        }
     }
 
     bool isCurrentLocationEmtpy(int aimHeight, int aimWidth, Vector2 locationToUse)
