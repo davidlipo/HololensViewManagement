@@ -24,9 +24,9 @@ public class TrackingManagerScript : MonoBehaviour {
         for (int i = 0; i < objectLabels.Length; i++)
         {
             objectLabels[i] = (GameObject)Instantiate(label, new Vector3(0, 0, 0), Quaternion.identity);
-            objectLabels[i].GetComponentInChildren<TextMesh>().text = i.ToString();
+            objectLabels[i].GetComponentInChildren<TextMesh>().text = trackedObjs[i].GetComponent<TargetScript>().getLabelMessage();
         }
-        cam = GameObject.FindWithTag("ARCamera").transform.GetChild(1).GetComponent<Camera>(); // 0 if single camera, 1 is dual camera
+        cam = GameObject.FindWithTag("ARCamera").transform.GetChild(0).GetComponent<Camera>(); // 0 if single camera, 1 is dual camera
     }
 
     // Update is called once per frame
@@ -38,7 +38,6 @@ public class TrackingManagerScript : MonoBehaviour {
         {
             if (delay > DELAY_BETWEEN_CHECK && !isCurrentLocationEmtpy(100, 200, cam.WorldToScreenPoint(objectLabels[i].transform.position)))
             {
-                //Debug.Log("Collision");
                 Rect rect = trackedObjs[i].GetComponent<TargetScript>().getBounds();
                 Vector2 locationToUse = placeLabel(100, 200, rect.center);
                 float distanceToPlace = Vector3.Distance(Camera.main.transform.position, trackedObjs[i].transform.position);

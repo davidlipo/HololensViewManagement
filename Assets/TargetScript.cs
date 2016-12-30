@@ -3,6 +3,7 @@ using System.Collections;
 using Vuforia;
 
 public class TargetScript : MonoBehaviour {
+    public string labelMessage;
     private Rect bounds;
     bool isOnScreen;
     Camera cam;
@@ -26,6 +27,11 @@ public class TargetScript : MonoBehaviour {
     public Rect getBounds()
     {
         return bounds;
+    }
+
+    public string getLabelMessage()
+    {
+        return labelMessage;
     }
 
     //http://answers.unity3d.com/questions/49943/is-there-an-easy-way-to-get-on-screen-render-size.html
