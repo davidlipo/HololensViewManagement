@@ -5,22 +5,25 @@ using Vuforia;
 public class TargetScript : MonoBehaviour {
     public string labelMessage;
     private Rect bounds;
-    bool isOnScreen;
-    Camera cam;
+    private Camera cam;
+    private GameObject trackingCube;
+    private Renderer trackingCubeRenderer;
 
     void Start()
     {
         cam = GameObject.FindWithTag("MainCamera").GetComponent<Camera>();
-        isOnScreen = true;
+        trackingCube = transform.FindChild("Cube").gameObject;
+        trackingCubeRenderer = trackingCube.GetComponent<Renderer>();
     }
 	
 	void Update() {
-        //Debug.Log("cube pos " + cam.WorldToScreenPoint(GameObject.FindWithTag("Cube").transform.position));
-        //Debug.Log(cam.transform.position);
-        if (isOnScreen)
+        if (trackingCubeRenderer.enabled)
         {
-            bounds = GetScreenBounds(transform.FindChild("Cube").gameObject, cam);
-            //Debug.Log("Obj" + bounds);
+            bounds = GetScreenBounds(trackingCube, cam);
+        }
+        else
+        {
+            bounds = new Rect();
         }
     }
 

@@ -25,6 +25,7 @@ public class TrackingManagerScript : MonoBehaviour {
         {
             objectLabels[i] = (GameObject)Instantiate(label, new Vector3(0, 0, 0), Quaternion.identity);
             objectLabels[i].GetComponentInChildren<TextMesh>().text = trackedObjs[i].GetComponent<TargetScript>().getLabelMessage();
+            objectLabels[i].GetComponent<Renderer>().enabled = false;
         }
         cam = GameObject.FindWithTag("ARCamera").transform.GetChild(0).GetComponent<Camera>(); // 0 if single camera, 1 is dual camera
     }
@@ -36,14 +37,22 @@ public class TrackingManagerScript : MonoBehaviour {
 
         for (int i = 0; i < objectLabels.Length; i++)
         {
-            if (delay > DELAY_BETWEEN_CHECK && !isCurrentLocationEmtpy(100, 200, cam.WorldToScreenPoint(objectLabels[i].transform.position)))
+            Rect rect = trackedObjs[i].GetComponent<TargetScript>().getBounds();
+            if (rect.Equals(new Rect()))
             {
-                Rect rect = trackedObjs[i].GetComponent<TargetScript>().getBounds();
-                Vector2 locationToUse = placeLabel(100, 200, rect.center);
-                float distanceToPlace = Vector3.Distance(Camera.main.transform.position, trackedObjs[i].transform.position);
-                Vector3 worldLocation = cam.ScreenToWorldPoint(new Vector3(locationToUse.x, locationToUse.y, distanceToPlace));
-                objectLabels[i].transform.position = worldLocation;
-                objectLabels[i].transform.parent = trackedObjs[i].transform;
+                objectLabels[i].GetComponent<Renderer>().enabled = false;
+            }
+            else
+            {
+                if (delay > DELAY_BETWEEN_CHECK && !isCurrentLocationEmtpy(100, 200, cam.WorldToScreenPoint(objectLabels[i].transform.position)))
+                {
+                    Vector2 locationToUse = placeLabel(100, 200, rect.center);
+                    float distanceToPlace = Vector3.Distance(Camera.main.transform.position, trackedObjs[i].transform.position);
+                    Vector3 worldLocation = cam.ScreenToWorldPoint(new Vector3(locationToUse.x, locationToUse.y, distanceToPlace));
+                    objectLabels[i].transform.position = worldLocation;
+                    objectLabels[i].transform.parent = trackedObjs[i].transform;
+                    objectLabels[i].GetComponent<Renderer>().enabled = true;
+                }
             }
             objectLabels[i].transform.rotation = Quaternion.LookRotation(-Camera.main.transform.up, -Camera.main.transform.forward);
         }
