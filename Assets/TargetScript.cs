@@ -11,7 +11,7 @@ public class TargetScript : MonoBehaviour {
 
     void Start()
     {
-        cam = GameObject.FindWithTag("MainCamera").GetComponent<Camera>();
+        cam = GameObject.FindWithTag("ARCamera").transform.GetChild(0).GetComponent<Camera>(); // 0 if single camera, 1 is dual camera
         trackingCube = transform.FindChild("Cube").gameObject;
         trackingCubeRenderer = trackingCube.GetComponent<Renderer>();
     }

@@ -44,7 +44,8 @@ public class TrackingManagerScript : MonoBehaviour {
             }
             else
             {
-                if (delay > DELAY_BETWEEN_CHECK && !isCurrentLocationEmtpy(100, 200, cam.WorldToScreenPoint(objectLabels[i].transform.position)))
+                if (!objectLabels[i].GetComponent<Renderer>().enabled ||
+                    (delay > DELAY_BETWEEN_CHECK && !isCurrentLocationEmtpy(100, 200, cam.WorldToScreenPoint(objectLabels[i].transform.position))))
                 {
                     Vector2 locationToUse = placeLabel(100, 200, rect.center);
                     float distanceToPlace = Vector3.Distance(Camera.main.transform.position, trackedObjs[i].transform.position);
