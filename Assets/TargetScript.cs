@@ -4,6 +4,7 @@ using Vuforia;
 
 public class TargetScript : MonoBehaviour {
     public string labelMessage;
+    public int priority;
     private Rect bounds;
     private Camera cam;
     private GameObject trackingCube;
@@ -35,6 +36,11 @@ public class TargetScript : MonoBehaviour {
     public string getLabelMessage()
     {
         return labelMessage;
+    }
+
+    public int getPriority()
+    {
+        return priority;
     }
 
     //http://answers.unity3d.com/questions/49943/is-there-an-easy-way-to-get-on-screen-render-size.html

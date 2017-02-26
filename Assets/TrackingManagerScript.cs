@@ -10,7 +10,7 @@ public class TrackingManagerScript : MonoBehaviour
     private int height;
     private int[,] pixels;
     public GameObject label;
-    private GameObject[] objectLabels;
+    private List<List<GameObject>> objectLabels;
     private Camera cam;
     private int delay = 0;
 
@@ -22,12 +22,24 @@ public class TrackingManagerScript : MonoBehaviour
         width = Screen.width;
         height = Screen.height;
         trackedObjs = GameObject.FindGameObjectsWithTag("TrackedObj");
-        objectLabels = new GameObject[trackedObjs.Length];
-        for (int i = 0; i < objectLabels.Length; i++)
+        objectLabels = new List<List<GameObject>>();
+        for (int i = 0; i < trackedObjs.Length; i++)
         {
-            objectLabels[i] = (GameObject)Instantiate(label, new Vector3(0, 0, 0), Quaternion.identity);
-            objectLabels[i].GetComponentInChildren<TextMesh>().text = trackedObjs[i].GetComponent<TargetScript>().getLabelMessage();
-            objectLabels[i].GetComponent<Renderer>().enabled = false;
+            int index = trackedObjs[i].GetComponent<TargetScript>().getPriority();
+            int newIndex = 0;
+            while (objectLabels.Count < index) objectLabels.Add(new List<GameObject>());
+            if (objectLabels.Count == index)
+            {
+                objectLabels.Add(new List<GameObject>());
+            }
+            else
+            {
+                newIndex = objectLabels[index].Count;
+            }
+            print(index + " " + newIndex);
+            objectLabels[index].Add((GameObject)Instantiate(label, new Vector3(0, 0, 0), Quaternion.identity));
+            objectLabels[index][newIndex].GetComponentInChildren<TextMesh>().text = trackedObjs[i].GetComponent<TargetScript>().getLabelMessage();
+            objectLabels[index][newIndex].GetComponent<Renderer>().enabled = false;
         }
         cam = GameObject.FindWithTag("ARCamera").transform.GetChild(0).GetComponent<Camera>(); // 0 if single camera, 1 is dual camera
     }
@@ -37,30 +49,32 @@ public class TrackingManagerScript : MonoBehaviour
     {
         delay++;
         pixels = generatePixelMap();
-
-        for (int i = 0; i < objectLabels.Length; i++)
+        for (int i = 0; i < objectLabels.Count; i++)
         {
-            Rect rect = trackedObjs[i].GetComponent<TargetScript>().getBounds();
-            if (rect.Equals(new Rect()))
+            for (int j = 0; j < objectLabels[i].Count; j++)
             {
-                objectLabels[i].GetComponent<Renderer>().enabled = false;
-            }
-            else
-            {
-                if (!objectLabels[i].GetComponent<Renderer>().enabled ||
-                    (delay > DELAY_BETWEEN_CHECK && !isCurrentLocationEmtpy(100, 200, cam.WorldToScreenPoint(objectLabels[i].transform.position))))
+                Rect rect = trackedObjs[i].GetComponent<TargetScript>().getBounds();
+                if (rect.Equals(new Rect()))
                 {
-                    // Vector2 locationToUse = placeLabel(100, 200, rect.center);
-                    Vector2 locationToUse = placeLabelByLargestRectangle(50, 100, rect.center, rect.size);
-                    float distanceToPlace = Vector3.Distance(Camera.main.transform.position, trackedObjs[i].transform.position);
-                    Vector3 worldLocation = cam.ScreenToWorldPoint(new Vector3(locationToUse.x, locationToUse.y, distanceToPlace));
-                    objectLabels[i].transform.position = worldLocation;
-                    objectLabels[i].transform.parent = trackedObjs[i].transform;
-                    objectLabels[i].GetComponent<Renderer>().enabled = true;
+                    objectLabels[i][j].GetComponent<Renderer>().enabled = false;
                 }
+                else
+                {
+                    if (!objectLabels[i][j].GetComponent<Renderer>().enabled ||
+                        (delay > DELAY_BETWEEN_CHECK && !isCurrentLocationEmtpy(100, 200, cam.WorldToScreenPoint(objectLabels[i][j].transform.position))))
+                    {
+                        // Vector2 locationToUse = placeLabel(100, 200, rect.center);
+                        Vector2 locationToUse = placeLabelByLargestRectangle(50, 100, rect.center, rect.size);
+                        float distanceToPlace = Vector3.Distance(Camera.main.transform.position, trackedObjs[i].transform.position);
+                        Vector3 worldLocation = cam.ScreenToWorldPoint(new Vector3(locationToUse.x, locationToUse.y, distanceToPlace));
+                        objectLabels[i][j].transform.position = worldLocation;
+                        objectLabels[i][j].transform.parent = trackedObjs[i].transform;
+                        objectLabels[i][j].GetComponent<Renderer>().enabled = true;
+                    }
+                }
+                pixels = addToPixelMap(pixels, TargetScript.GetScreenBounds(objectLabels[i][j], cam));
+                objectLabels[i][j].transform.rotation = Quaternion.LookRotation(-Camera.main.transform.up, -Camera.main.transform.forward);
             }
-            pixels = addToPixelMap(pixels, TargetScript.GetScreenBounds(objectLabels[i], cam));
-            objectLabels[i].transform.rotation = Quaternion.LookRotation(-Camera.main.transform.up, -Camera.main.transform.forward);
         }
 
         if (delay > DELAY_BETWEEN_CHECK)
