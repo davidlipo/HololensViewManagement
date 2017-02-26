@@ -59,6 +59,7 @@ public class TrackingManagerScript : MonoBehaviour
                     objectLabels[i].GetComponent<Renderer>().enabled = true;
                 }
             }
+            pixels = addToPixelMap(pixels, TargetScript.GetScreenBounds(objectLabels[i], cam));
             objectLabels[i].transform.rotation = Quaternion.LookRotation(-Camera.main.transform.up, -Camera.main.transform.forward);
         }
 
@@ -119,6 +120,26 @@ public class TrackingManagerScript : MonoBehaviour
             }
         }
         return pixels;
+    }
+
+    int[,] addToPixelMap(int[,] map, Rect rect)
+    {
+
+        for (int i = 0; i < height; i++)
+        {
+            for (int j = 0; j < width; j++)
+            {
+                if (map[i, j] == 0)
+                {
+                    Vector2 point = new Vector2(j, i);
+                    if (rect.Contains(point))
+                    {
+                        map[i, j] = 1;
+                    }
+                }
+            }
+        }
+        return map;
     }
 
     Vector2 placeLabel(int aimHeight, int aimWidth, Vector2 objLoc)
