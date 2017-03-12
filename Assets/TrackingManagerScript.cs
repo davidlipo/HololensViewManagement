@@ -73,7 +73,7 @@ public class ObjectLabel : MonoBehaviour
                         currLabel.GetComponent<Renderer>().enabled = false;
                     }
                 }
-                else
+                else if (currLabel.GetComponentInChildren<TextMesh>().text != "")
                 {
                     if (!currLabel.GetComponent<Renderer>().enabled ||
                         (delay > DELAY_BETWEEN_CHECK && !isCurrentLocationEmtpy(pixels, labelRect)))

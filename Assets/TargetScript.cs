@@ -50,7 +50,6 @@ public class TargetScript : MonoBehaviour {
         {
             Vector3 cen = go.GetComponentInChildren<Renderer>().bounds.center;
             Vector3 ext = go.GetComponentInChildren<Renderer>().bounds.extents;
-            //Debug.Log("cen" + cen + " ext" + ext);
             Vector2[] extentPoints = new Vector2[8]
              {
                    cam.WorldToScreenPoint(new Vector3(cen.x-ext.x, cen.y-ext.y, cen.z-ext.z)),
@@ -66,11 +65,9 @@ public class TargetScript : MonoBehaviour {
             Vector2 max = extentPoints[0];
             foreach (Vector2 v in extentPoints)
             {
-                //Debug.Log(v);
                 min = Vector2.Min(min, v);
                 max = Vector2.Max(max, v);
             }
-            //Debug.Log("min" + min + " max" + max);
             return new Rect(min.x, min.y, max.x - min.x, max.y - min.y);
         } else
         {
