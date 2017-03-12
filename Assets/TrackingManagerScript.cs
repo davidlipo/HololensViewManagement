@@ -91,9 +91,13 @@ public class ObjectLabel : MonoBehaviour
                         currLabel.GetComponent<Renderer>().enabled = true;
                         labelRect = TargetScript.GetScreenBounds(currLabel, cam);
                     }
+                    pixels = addToPixelMap(pixels, labelRect);
+                    currLabel.transform.rotation = Quaternion.LookRotation(-Camera.main.transform.up, -Camera.main.transform.forward);
+
+                    LineRenderer lineRenderer = currLabel.GetComponentInChildren<LineRenderer>();
+                    lineRenderer.SetPosition(0, currObj.transform.position);
+                    lineRenderer.SetPosition(1, currLabel.transform.position);
                 }
-                pixels = addToPixelMap(pixels, labelRect);
-                currLabel.transform.rotation = Quaternion.LookRotation(-Camera.main.transform.up, -Camera.main.transform.forward);
             }
         }
 
