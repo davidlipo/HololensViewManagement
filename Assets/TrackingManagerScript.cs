@@ -65,7 +65,6 @@ public class ObjectLabel : MonoBehaviour
                 GameObject currLabel = objectLabels[i][j].label;
                 GameObject currObj = objectLabels[i][j].trackedObject;
                 Rect rect = currObj.GetComponent<TargetScript>().getBounds();
-                Rect labelRect = TargetScript.GetScreenBounds(currLabel, cam);
                 if (rect.Equals(new Rect()))
                 {
                     if (currLabel.GetComponent<Renderer>().enabled)
@@ -75,6 +74,7 @@ public class ObjectLabel : MonoBehaviour
                 }
                 else if (currLabel.GetComponentInChildren<TextMesh>().text != "")
                 {
+                    Rect labelRect = TargetScript.GetScreenBounds(currLabel, cam);
                     if (!currLabel.GetComponent<Renderer>().enabled ||
                         (delay > DELAY_BETWEEN_CHECK && !isCurrentLocationEmtpy(pixels, labelRect)))
                     {
@@ -132,7 +132,15 @@ public class ObjectLabel : MonoBehaviour
         List<Rect> trackedRects = new List<Rect>();
         int[,] pixels = new int[height, width];
 
-        for (int i = 0; i < objectLabels.Count; i++)
+        for (int i = 0; i < height; i++)
+        {
+            for (int j = 0; j < width; j++)
+            {
+                pixels[i, j] = 0;
+            }
+        }
+
+                for (int i = 0; i < objectLabels.Count; i++)
         {
             for (int j = 0; j < objectLabels[i].Count; j++)
             {
@@ -140,19 +148,17 @@ public class ObjectLabel : MonoBehaviour
             }
         }
 
-        for (int i = 0; i < height; i++)
+        foreach (Rect rect in trackedRects)
         {
-            for (int j = 0; j < width; j++)
+            int rectYMin = Mathf.Max((int)rect.yMin, 0);
+            int rectYMax = Mathf.Min((int)rect.yMax, height);
+            int rectXMin = Mathf.Max((int)rect.xMin, 0);
+            int rectXMax = Mathf.Min((int)rect.xMax, width);
+            for (int i = rectYMin; i <= rectYMax; i++)
             {
-                Vector2 point = new Vector2(j, i);
-                pixels[i, j] = 0;
-                foreach (Rect rect in trackedRects)
+                for (int j = rectXMin; j < rectXMax; j++)
                 {
-                    if (rect.Contains(point))
-                    {
-                        pixels[i, j] = 1;
-                        break;
-                    }
+                    pixels[i, j] = 1;
                 }
             }
         }
@@ -179,9 +185,9 @@ public class ObjectLabel : MonoBehaviour
     Vector2 placeLabelByLargestRectangle(int aimHeight, int aimWidth, Vector2 objLoc, Vector2 objSize)
     {
         int[,] histogram = new int[height, width];
-        for (int i = 0; i < pixels.GetLength(0); i++)
+        for (int i = 0; i < height; i++)
         {
-            for (int j = 0; j < pixels.GetLength(1); j++)
+            for (int j = 0; j < width; j++)
             {
                 if (pixels[i, j] == 0) {
                     histogram[i, j] = 1 + (j > 0 ? histogram[i, j - 1] : 0);
