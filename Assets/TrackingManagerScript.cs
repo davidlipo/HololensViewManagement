@@ -109,14 +109,14 @@ public class ObjectLabel : MonoBehaviour
 
     bool isCurrentLocationEmtpy(int[,] map, Rect rect)
     {
-        if (rect == null || rect.Equals(new Rect()))
+        if (rect == null || rect.Equals(new Rect()) || rect.yMin < 0 || rect.yMax > height || rect.xMin < 0 || rect.xMax > width)
         {
             return false;
         }
 
-        for (int i = Mathf.Max((int)rect.y, 0); i < Mathf.Min(rect.y + rect.height, map.GetLength(0)); i++)
+        for (int i = (int)rect.yMin; i < rect.yMax; i++)
         {
-            for (int j = Mathf.Max((int)rect.x, 0); j < Mathf.Min(rect.x + rect.width, map.GetLength(1)); j++)
+            for (int j = (int)rect.xMin; j < rect.xMax; j++)
             {
                 if (map[i, j] == 1)
                 {
@@ -151,9 +151,9 @@ public class ObjectLabel : MonoBehaviour
         foreach (Rect rect in trackedRects)
         {
             int rectYMin = Mathf.Max((int)rect.yMin, 0);
-            int rectYMax = Mathf.Min((int)rect.yMax, height);
+            int rectYMax = Mathf.Min((int)rect.yMax, height-1);
             int rectXMin = Mathf.Max((int)rect.xMin, 0);
-            int rectXMax = Mathf.Min((int)rect.xMax, width);
+            int rectXMax = Mathf.Min((int)rect.xMax, width-1);
             for (int i = rectYMin; i <= rectYMax; i++)
             {
                 for (int j = rectXMin; j < rectXMax; j++)
@@ -246,6 +246,12 @@ public class ObjectLabel : MonoBehaviour
     object trySpaceWithSetYOrReturnMinHeight(Vector2 currentAim, int[,] histogram, int aimWidth, int aimHeight) {
         int countOnRow = 0;
         int maxMinNum = 0;
+
+        if (currentAim.x < 0 || currentAim.x > width)
+        {
+            return 0;
+        }
+
         for (int j = Mathf.Max(0, (int)currentAim.x - aimWidth); j<Mathf.Min(width, (int)currentAim.x + aimWidth); j++)
         {
             if (histogram[(int)currentAim.y, j] >= aimHeight)
