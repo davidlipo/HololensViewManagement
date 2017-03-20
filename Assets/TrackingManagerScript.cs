@@ -84,7 +84,7 @@ public class ObjectLabel : MonoBehaviour
                             size = new Vector2(labelRect.width, labelRect.height);
                         }
                         Vector2 locationToUse = placeLabelByLargestRectangle((int)size.y, (int)size.x, rect.center, rect.size);
-                        float distanceToPlace = Vector3.Distance(Camera.main.transform.position, currObj.transform.position);
+                        float distanceToPlace = Vector3.Distance(cam.transform.position, currObj.transform.position);
                         Vector3 worldLocation = cam.ScreenToWorldPoint(new Vector3(locationToUse.x, locationToUse.y, distanceToPlace));
                         currLabel.transform.position = worldLocation;
                         currLabel.transform.parent = currObj.transform;
@@ -92,7 +92,7 @@ public class ObjectLabel : MonoBehaviour
                         labelRect = TargetScript.GetScreenBounds(currLabel, cam);
                     }
                     pixels = addToPixelMap(pixels, labelRect);
-                    currLabel.transform.rotation = Quaternion.LookRotation(-Camera.main.transform.up, -Camera.main.transform.forward);
+                    currLabel.transform.rotation = Quaternion.LookRotation(-cam.transform.up, -cam.transform.forward);
 
                     LineRenderer lineRenderer = currLabel.GetComponentInChildren<LineRenderer>();
                     lineRenderer.SetPosition(0, currObj.transform.position);
@@ -214,7 +214,7 @@ public class ObjectLabel : MonoBehaviour
         {
             // Bottom
             Vector2? spaceAvailable =
-                trySpaceWithSetY(new Vector2(currentAim.x, currentAim.y - objSize.y / 2), histogram, aimWidth, aimHeight);
+                trySpaceWithSetY(new Vector2(currentAim.x, currentAim.y - objSize.y / 2 - 10), histogram, aimWidth, aimHeight);
             if (spaceAvailable != null)
             {
                 return (Vector2)spaceAvailable;
