@@ -86,7 +86,7 @@ public class ObjectLabel : MonoBehaviour
                         Vector2 locationToUse = placeLabelByLargestRectangle((int)size.y, (int)size.x, rect.center, rect.size);
                         float distanceToPlace = Vector3.Distance(cam.transform.position, currObj.transform.position);
                         Vector3 worldLocation = cam.ScreenToWorldPoint(new Vector3(locationToUse.x, locationToUse.y, distanceToPlace));
-                        currLabel.transform.position = worldLocation;
+                        currLabel.GetComponent<LabelPositioner>().setTargetPosition(worldLocation);
                         currLabel.transform.parent = currObj.transform;
                         currLabel.GetComponent<Renderer>().enabled = true;
                         labelRect = TargetScript.GetScreenBounds(currLabel, cam);
