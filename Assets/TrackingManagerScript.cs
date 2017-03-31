@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
+
 public class ObjectLabel : MonoBehaviour
 {
     public GameObject label;
@@ -16,9 +17,9 @@ public class ObjectLabel : MonoBehaviour
 
     public class TrackingManagerScript : MonoBehaviour
 {
-    private int width;
-    private int height;
-    private int[,] pixels;
+    private Rect screenRect;
+    private List<Rect> rectsTakenOnScreen;
+    private List<Rect> emptyRects;
     public GameObject label;
     private List<List<ObjectLabel>> objectLabels;
     private Camera cam;
@@ -28,8 +29,7 @@ public class ObjectLabel : MonoBehaviour
 
     void Start()
     {
-        width = Screen.width;
-        height = Screen.height;
+        screenRect = new Rect(0, 0, Screen.width, Screen.height);
         GameObject[]  trackedObjs = GameObject.FindGameObjectsWithTag("TrackedObj");
         objectLabels = new List<List<ObjectLabel>>();
         for (int i = 0; i < trackedObjs.Length; i++)
@@ -53,11 +53,30 @@ public class ObjectLabel : MonoBehaviour
         cam = GameObject.FindWithTag("ARCamera").transform.GetChild(0).GetComponent<Camera>(); // 0 if single camera, 1 is dual camera
     }
 
+    private static readonly Texture2D backgroundTexture = Texture2D.whiteTexture;
+    private static readonly GUIStyle textureStyle = new GUIStyle { normal = new GUIStyleState { background = backgroundTexture } };
+
+    void OnGUI()
+    {
+        GUI.backgroundColor = new Color(1, 0, 0, 0.3f);
+        foreach (Rect rect in rectsTakenOnScreen)
+        {
+            GUI.Box(rect, GUIContent.none, textureStyle);
+        }
+
+        GUI.backgroundColor = new Color(0, 3, 0, 0.3f);
+        foreach (Rect rect in emptyRects)
+        {
+            GUI.Box(rect, GUIContent.none, textureStyle);
+        }
+    }
+
     // Update is called once per frame
     void Update()
     {
         delay++;
-        pixels = generatePixelMap();
+        rectsTakenOnScreen = findTakenSpaces();
+        emptyRects = findEmptySpace(rectsTakenOnScreen);
         for (int i = 0; i < objectLabels.Count; i++)
         {
             for (int j = 0; j < objectLabels[i].Count; j++)
@@ -76,14 +95,14 @@ public class ObjectLabel : MonoBehaviour
                 {
                     Rect labelRect = TargetScript.GetScreenBounds(currLabel, cam);
                     if (!currLabel.GetComponent<Renderer>().enabled ||
-                        (delay > DELAY_BETWEEN_CHECK && !isCurrentLocationEmtpy(pixels, labelRect)))
+                        (delay > DELAY_BETWEEN_CHECK && !isCurrentLocationEmpty(rectsTakenOnScreen, labelRect)))
                     {
                         Vector2 size = new Vector2(120, 80);
                         if (currLabel.GetComponent<Renderer>().enabled)
                         {
                             size = new Vector2(labelRect.width, labelRect.height);
                         }
-                        Vector2 locationToUse = placeLabelByLargestRectangle((int)size.y, (int)size.x, rect.center, rect.size);
+                        Vector2 locationToUse = placeLabel(size.y, size.x, rect.center, emptyRects, rectsTakenOnScreen);
                         float distanceToPlace = Vector3.Distance(cam.transform.position, currObj.transform.position);
                         Vector3 worldLocation = cam.ScreenToWorldPoint(new Vector3(locationToUse.x, locationToUse.y, distanceToPlace));
                         currLabel.GetComponent<LabelPositioner>().setTargetPosition(worldLocation);
@@ -91,7 +110,7 @@ public class ObjectLabel : MonoBehaviour
                         currLabel.GetComponent<Renderer>().enabled = true;
                         labelRect = TargetScript.GetScreenBounds(currLabel, cam);
                     }
-                    pixels = addToPixelMap(pixels, labelRect);
+                    // ADD CURRLABEL TO LIST OF RECTS
                     currLabel.transform.rotation = Quaternion.LookRotation(-cam.transform.up, -cam.transform.forward);
 
                     LineRenderer lineRenderer = currLabel.GetComponentInChildren<LineRenderer>();
@@ -107,204 +126,158 @@ public class ObjectLabel : MonoBehaviour
         }
     }
 
-    bool isCurrentLocationEmtpy(int[,] map, Rect rect)
+    bool isCurrentLocationEmpty(List<Rect> takenRects, Rect rect)
     {
-        if (rect == null || rect.Equals(new Rect()) || rect.yMin < 0 || rect.yMax > height || rect.xMin < 0 || rect.xMax > width)
+        if (!screenRect.Overlaps(rect))
         {
             return false;
         }
 
-        for (int i = (int)rect.yMin; i < rect.yMax; i++)
+        foreach (Rect currRect in takenRects)
         {
-            for (int j = (int)rect.xMin; j < rect.xMax; j++)
-            {
-                if (map[i, j] == 1)
-                {
-                    return false;
-                }
+            if (currRect.Overlaps(rect)) {
+                return false;
             }
         }
         return true;
     }
 
-    int[,] generatePixelMap()
+    Vector2 placeLabel(float height, float width, Vector2 targetPos, List<Rect> emptyRects, List<Rect> rectsTakenOnScreen)
     {
-        List<Rect> trackedRects = new List<Rect>();
-        int[,] pixels = new int[height, width];
-
-        for (int i = 0; i < height; i++)
+        emptyRects.Sort((a, b) => compareDistances(a, b, targetPos));
+        foreach (Rect rect in emptyRects)
         {
-            for (int j = 0; j < width; j++)
+            float[] xs = new float[] { rect.center.x, rect.xMin, rect.xMax - width };
+            float[] ys = new float[] { rect.center.y, rect.yMin, rect.yMax - height };
+            if (targetPos.x > rect.center.x)
             {
-                pixels[i, j] = 0;
+                xs = new float[] { rect.center.x, rect.xMax - width, rect.xMin };
             }
-        }
-
-                for (int i = 0; i < objectLabels.Count; i++)
-        {
-            for (int j = 0; j < objectLabels[i].Count; j++)
+            if (targetPos.y > rect.center.y)
             {
-                trackedRects.Add(objectLabels[i][j].trackedObject.GetComponent<TargetScript>().getBounds());
+                ys = new float[] { rect.center.y, rect.yMax - height, rect.yMin };
             }
-        }
-
-        foreach (Rect rect in trackedRects)
-        {
-            int rectYMin = Mathf.Max((int)rect.yMin, 0);
-            int rectYMax = Mathf.Min((int)rect.yMax, height-1);
-            int rectXMin = Mathf.Max((int)rect.xMin, 0);
-            int rectXMax = Mathf.Min((int)rect.xMax, width-1);
-            for (int i = rectYMin; i <= rectYMax; i++)
+            
+            foreach (float x in xs)
             {
-                for (int j = rectXMin; j < rectXMax; j++)
+                foreach (float y in ys)
                 {
-                    pixels[i, j] = 1;
+                    bool isOk = true;
+                    Rect potentialRect = new Rect(x, y, width, height);
+                    if (!screenRect.Overlaps(potentialRect))
+                    {
+                        continue;
+                    }
+                    foreach (Rect takenRect in rectsTakenOnScreen)
+                    {
+                        if (takenRect.Overlaps(potentialRect))
+                        {
+                            isOk = false;
+                            break;
+                        }
+                    }
+                    if (isOk)
+                    {
+                        return new Vector2(x, Screen.height - y);
+                    }
                 }
             }
         }
-        return pixels;
+
+        return new Vector2();
     }
 
-    int[,] addToPixelMap(int[,] map, Rect rect)
+    int compareDistances(Rect a, Rect b, Vector2 targetPos)
     {
-        if (rect == null || rect.Equals(new Rect()))
-        {
-            return map;
-        }
-
-        for (int i = Mathf.Max((int)rect.y, 0); i < Mathf.Min(rect.y + rect.height, map.GetLength(0)); i++)
-        {
-            for (int j = Mathf.Max((int)rect.x, 0); j < Mathf.Min(rect.x + rect.width, map.GetLength(1)) ; j++)
-            {
-                map[i, j] = 1;
-            }
-        }
-        return map;
+        return (int)(minDistanceToRect(a, targetPos) - minDistanceToRect(b, targetPos));
     }
 
-    Vector2 placeLabelByLargestRectangle(int aimHeight, int aimWidth, Vector2 objLoc, Vector2 objSize)
+    float minDistanceToRect(Rect a, Vector2 targetPos)
     {
-        int[,] histogram = new int[height, width];
-        for (int i = 0; i < height; i++)
+        float minDistance = -1;
+        float currDistance;
+        foreach (float x in new float[] { a.center.x, a.xMin, a.xMax })
         {
-            for (int j = 0; j < width; j++)
+            foreach (float y in new float[] { a.center.y, a.yMin, a.yMax })
             {
-                if (pixels[i, j] == 0) {
-                    histogram[i, j] = 1 + (j > 0 ? histogram[i, j - 1] : 0);
-                } else {
-                    histogram[i, j] = 0;
-                }
+                currDistance = Vector2.Distance(new Vector2(x, y), targetPos);
+                minDistance = minDistance == -1? currDistance : Mathf.Min(currDistance, minDistance);
             }
         }
 
-        Vector2 currentAim = new Vector2(objLoc.x, objLoc.y);
-        float halfHeightPlusLabelHeight = aimHeight + objSize.y / 2;
-        float halfWidthPlusLabelWidth = aimWidth + objSize.x / 2;
-        if (height > currentAim.y + halfHeightPlusLabelHeight)
-        {
-            // Top
-            Vector2? spaceAvailable =
-                trySpaceWithSetY(new Vector2(currentAim.x, currentAim.y + halfHeightPlusLabelHeight), histogram, aimWidth, aimHeight);
-            if (spaceAvailable != null)
-            {
-                return (Vector2)spaceAvailable;
-            }
-        }
-        if (currentAim.y - objSize.y / 2 > aimHeight)
-        {
-            // Bottom
-            Vector2? spaceAvailable =
-                trySpaceWithSetY(new Vector2(currentAim.x, currentAim.y - objSize.y / 2 - 10), histogram, aimWidth, aimHeight);
-            if (spaceAvailable != null)
-            {
-                return (Vector2)spaceAvailable;
-            }
-        }
-        if (currentAim.x > halfWidthPlusLabelWidth)
-        {
-            // Left
-            Vector2? spaceAvailable =
-                trySpaceWithSetX(new Vector2(currentAim.x - halfWidthPlusLabelWidth, currentAim.y), histogram, aimWidth, aimHeight);
-            if (spaceAvailable != null)
-            {
-                return (Vector2)spaceAvailable;
-            }
-        }
-        if (width > currentAim.x + halfHeightPlusLabelHeight)
-        {
-            // Right
-            Vector2? spaceAvailable =
-                trySpaceWithSetX(new Vector2(currentAim.x + objSize.x / 2, currentAim.y), histogram, aimWidth, aimHeight);
-            if (spaceAvailable != null)
-            {
-                return (Vector2)spaceAvailable;
-            }
-        }
-        return objLoc;
+        return minDistance;
     }
 
-    object trySpaceWithSetYOrReturnMinHeight(Vector2 currentAim, int[,] histogram, int aimWidth, int aimHeight) {
-        int countOnRow = 0;
-        int maxMinNum = 0;
-
-        if (currentAim.x < 0 || currentAim.x > width)
-        {
-            return 0;
-        }
-
-        for (int j = Mathf.Max(0, (int)currentAim.x - aimWidth); j<Mathf.Min(width, (int)currentAim.x + aimWidth); j++)
-        {
-            if (histogram[(int)currentAim.y, j] >= aimHeight)
-            {
-                countOnRow += 1;
-            }
-            else
-            {
-                maxMinNum = Mathf.Max(maxMinNum, histogram[(int)currentAim.y, j]);
-               
-                if (countOnRow > aimWidth)
-                {
-                    return new Vector2(j - aimWidth, currentAim.y);
-                }
-                else if (j > currentAim.x)
-                {
-                    return maxMinNum > 0 ? maxMinNum : aimHeight - 1;
-                }
-                countOnRow = 0;
-            }
-        }
-        return currentAim;
-    }
-
-    Vector2? trySpaceWithSetY(Vector2 currentAim, int[,] histogram, int aimWidth, int aimHeight)
+    Rect intersects(Rect a, Rect b)
     {
-        object ret = trySpaceWithSetYOrReturnMinHeight(currentAim, histogram, aimWidth, aimHeight);
-        if (ret is int)
+        float xMin = Mathf.Max(a.xMin, b.xMin);
+        float xMax = Mathf.Min(a.xMax, b.xMax);
+        float yMin = Mathf.Max(a.yMin, b.yMin);
+        float yMax = Mathf.Min(a.yMax, b.yMax);
+
+        if (xMax > xMin && yMax > yMin) {
+            return new Rect(xMin, yMin, xMax - xMin, yMax - yMin);
+        }
+        return new Rect();
+    }
+
+    List<Rect> findInverseRectangles(Rect rect, Rect removeRect)
+    {
+        List<Rect> rects = new List<Rect>();
+
+        removeRect = intersects(removeRect, rect);
+
+        if (removeRect != new Rect())
         {
-            return null;
+            rects.Add(new Rect(rect.x, rect.y, rect.width, removeRect.y - rect.y));
+            rects.Add(new Rect(rect.x, removeRect.y + removeRect.height, rect.width, (rect.y + rect.height) - (removeRect.y + removeRect.height)));
+            rects.Add(new Rect(rect.x, removeRect.y, removeRect.x - rect.x, removeRect.height));
+            rects.Add(new Rect(removeRect.x + removeRect.width, removeRect.y, (rect.x + rect.width) - (removeRect.x + removeRect.width), removeRect.height));
+
+            rects.RemoveAll(x => x == new Rect());
         }
         else
         {
-            return (Vector2)ret;
+            rects.Add(rect);
         }
+        return rects;
     }
 
-    Vector2? trySpaceWithSetX(Vector2 currentAim, int[,] histogram, int aimWidth, int aimHeight)
+    List<Rect> findEmptySpace(List<Rect> rects)
     {
-        // Add width / 2 so that the center of the rectangle is passed to trySpaceWithSetYOrReturnMinHeight
-        Vector2 aim = new Vector2(currentAim.x + aimWidth / 2, currentAim.y);
-        for (int i = Mathf.Max(0, (int)currentAim.y - aimHeight / 2); i < Mathf.Min(height, (int)currentAim.y + aimHeight / 2); i++)
+        List<Rect> inverseRects = new List<Rect>();
+        inverseRects.Add(screenRect);
+
+        foreach (Rect currRect in rects)
         {
-            aim.y = i;
-            object isCurrentXEmpty = trySpaceWithSetYOrReturnMinHeight(aim, histogram, aimWidth / 2, aimHeight);
-            if (isCurrentXEmpty is int)
+            List<Rect> newInverseRects = new List<Rect>();
+
+            foreach (Rect currInverseRects in inverseRects)
             {
-                i += aimHeight - (int)isCurrentXEmpty - 1;
+                newInverseRects.AddRange(findInverseRectangles(currInverseRects, currRect));
             }
-            else {
-                return (Vector2)isCurrentXEmpty;
+
+            inverseRects = newInverseRects;
+        }
+        return inverseRects;
+    }
+
+    List<Rect> findTakenSpaces()
+    {
+        List<Rect> rects = new List<Rect>();
+
+        for (int i = 0; i < objectLabels.Count; i++)
+        {
+            for (int j = 0; j < objectLabels[i].Count; j++)
+            {
+                Rect bounds = objectLabels[i][j].trackedObject.GetComponent<TargetScript>().getBounds();
+                if (bounds != new Rect())
+                {
+                    rects.Add(bounds);
+                }
             }
         }
-        return null;
+
+        return rects;
     }
 }

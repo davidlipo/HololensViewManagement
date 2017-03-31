@@ -68,7 +68,7 @@ public class TargetScript : MonoBehaviour {
                 min = Vector2.Min(min, v);
                 max = Vector2.Max(max, v);
             }
-            return new Rect(min.x, min.y, max.x - min.x, max.y - min.y);
+            return new Rect(min.x, Screen.height - max.y, max.x - min.x, max.y - min.y);
         } else
         {
             return new Rect();
