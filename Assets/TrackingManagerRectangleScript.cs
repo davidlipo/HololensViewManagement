@@ -15,7 +15,7 @@ public class ObjectLabel : MonoBehaviour
     }
 }
 
-    public class TrackingManagerScript : MonoBehaviour
+    public class TrackingManagerRectangleScript : MonoBehaviour
 {
     private Rect screenRect;
     private List<Rect> rectsTakenOnScreen;
