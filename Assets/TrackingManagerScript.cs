@@ -25,6 +25,7 @@ public class ObjectLabel : MonoBehaviour
     private Camera cam;
     private int delay = 0;
     private bool DEBUG_MODE = false;
+    private Vector2 initLabelSize = new Vector2(120, 80);
 
     private const int DELAY_BETWEEN_CHECK = 10;
 
@@ -81,6 +82,9 @@ public class ObjectLabel : MonoBehaviour
         delay++;
         rectsTakenOnScreen = findTakenSpaces();
         emptyRects = findEmptySpace(rectsTakenOnScreen);
+
+        setScreenRect();
+
         for (int i = 0; i < objectLabels.Count; i++)
         {
             for (int j = 0; j < objectLabels[i].Count; j++)
@@ -101,7 +105,7 @@ public class ObjectLabel : MonoBehaviour
                     if (!currLabel.GetComponent<Renderer>().enabled ||
                         (delay > DELAY_BETWEEN_CHECK && !isCurrentLocationEmpty(rectsTakenOnScreen, labelRect)))
                     {
-                        Vector2 size = new Vector2(120, 80);
+                        Vector2 size = initLabelSize;
                         if (currLabel.GetComponent<Renderer>().enabled)
                         {
                             size = new Vector2(labelRect.width, labelRect.height);
@@ -129,6 +133,54 @@ public class ObjectLabel : MonoBehaviour
         if (delay > DELAY_BETWEEN_CHECK)
         {
             delay = 0;
+        }
+    }
+
+    void setScreenRect()
+    {
+        screenRect = new Rect();
+        for (int i = 0; i < objectLabels.Count; i++)
+        {
+            for (int j = 0; j < objectLabels[i].Count; j++)
+            {
+                GameObject currObj = objectLabels[i][j].trackedObject;
+                Rect rect = currObj.GetComponent<TargetScript>().getBounds();
+                if (rect.xMin < screenRect.xMin)
+                {
+                    screenRect.xMin = rect.xMin;
+                }
+                if (rect.yMin < screenRect.yMin)
+                {
+                    screenRect.yMin = rect.yMin;
+                }
+                if (rect.xMax > screenRect.xMax)
+                {
+                    screenRect.xMax = rect.xMax;
+                }
+                if (rect.yMax > screenRect.yMax)
+                {
+                    screenRect.yMax = rect.yMax;
+                }
+            }
+        }
+        int padding = 30;
+        screenRect.xMin -= initLabelSize.x + padding;
+        screenRect.xMax += initLabelSize.x + padding;
+        screenRect.yMin -= initLabelSize.y + padding;
+        screenRect.yMax += initLabelSize.y + padding;
+
+        if (screenRect.width > Screen.width)
+        {
+            float xDiff = screenRect.width - Screen.width;
+            screenRect.xMin += xDiff / 2;
+            screenRect.xMax -= xDiff / 2;
+        }
+
+        if (screenRect.height > Screen.height)
+        {
+            float yDiff = screenRect.height - Screen.height;
+            screenRect.yMin += yDiff / 2;
+            screenRect.yMax -= yDiff / 2;
         }
     }
 
