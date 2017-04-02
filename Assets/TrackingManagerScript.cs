@@ -24,6 +24,7 @@ public class ObjectLabel : MonoBehaviour
     private List<List<ObjectLabel>> objectLabels;
     private Camera cam;
     private int delay = 0;
+    private bool DEBUG_MODE = false;
 
     private const int DELAY_BETWEEN_CHECK = 10;
 
@@ -58,16 +59,19 @@ public class ObjectLabel : MonoBehaviour
 
     void OnGUI()
     {
-        GUI.backgroundColor = new Color(1, 0, 0, 0.3f);
-        foreach (Rect rect in rectsTakenOnScreen)
+        if (DEBUG_MODE)
         {
-            GUI.Box(rect, GUIContent.none, textureStyle);
-        }
+            GUI.backgroundColor = new Color(1, 0, 0, 0.3f);
+            foreach (Rect rect in rectsTakenOnScreen)
+            {
+                GUI.Box(rect, GUIContent.none, textureStyle);
+            }
 
-        GUI.backgroundColor = new Color(0, 3, 0, 0.3f);
-        foreach (Rect rect in emptyRects)
-        {
-            GUI.Box(rect, GUIContent.none, textureStyle);
+            GUI.backgroundColor = new Color(0, 1, 0, 0.3f);
+            foreach (Rect rect in emptyRects)
+            {
+                GUI.Box(rect, GUIContent.none, textureStyle);
+            }
         }
     }
 
@@ -104,13 +108,15 @@ public class ObjectLabel : MonoBehaviour
                         }
                         Vector2 locationToUse = placeLabel(size.y, size.x, rect.center, emptyRects, rectsTakenOnScreen);
                         float distanceToPlace = Vector3.Distance(cam.transform.position, currObj.transform.position);
-                        Vector3 worldLocation = cam.ScreenToWorldPoint(new Vector3(locationToUse.x, locationToUse.y, distanceToPlace));
+                        Vector3 screenPoint = new Vector3(locationToUse.x + size.x/2, Screen.height - locationToUse.y - size.y / 2, distanceToPlace);
+                        Vector3 worldLocation = cam.ScreenToWorldPoint(screenPoint);
                         currLabel.GetComponent<LabelPositioner>().setTargetPosition(worldLocation);
                         currLabel.transform.parent = currObj.transform;
                         currLabel.GetComponent<Renderer>().enabled = true;
                         labelRect = TargetScript.GetScreenBounds(currLabel, cam);
                     }
-                    // ADD CURRLABEL TO LIST OF RECTS
+                    rectsTakenOnScreen.Add(labelRect);
+                    emptyRects = findEmptySpace(rectsTakenOnScreen);
                     currLabel.transform.rotation = Quaternion.LookRotation(-cam.transform.up, -cam.transform.forward);
 
                     LineRenderer lineRenderer = currLabel.GetComponentInChildren<LineRenderer>();
@@ -178,7 +184,7 @@ public class ObjectLabel : MonoBehaviour
                     }
                     if (isOk)
                     {
-                        return new Vector2(x, Screen.height - y);
+                        return new Vector2(x, y);
                     }
                 }
             }
