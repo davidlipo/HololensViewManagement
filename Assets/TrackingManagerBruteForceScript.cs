@@ -96,24 +96,30 @@ public class TrackingManagerBruteForceScript : MonoBehaviour
         List<Rect> trackedRects = new List<Rect>();
         int[,] pixels = new int[height, width];
 
+        for (int i = 0; i < height; i++)
+        {
+            for (int j = 0; j < width; j++)
+            {
+                pixels[i, j] = 0;
+            }
+        }
+
         for (int k = 0; k < trackedObjs.Length; k++)
         {
             trackedRects.Add(trackedObjs[k].GetComponent<TargetScript>().getBounds());
         }
 
-        for (int i = 0; i < height; i++)
+        foreach (Rect rect in trackedRects)
         {
-            for (int j = 0; j < width; j++)
+            int rectYMin = Mathf.Max((int)rect.yMin, 0);
+            int rectYMax = Mathf.Min((int)rect.yMax, height - 1);
+            int rectXMin = Mathf.Max((int)rect.xMin, 0);
+            int rectXMax = Mathf.Min((int)rect.xMax, width - 1);
+            for (int i = rectYMin; i <= rectYMax; i++)
             {
-                Vector2 point = new Vector2(j, i);
-                pixels[i, j] = 0;
-                foreach (Rect rect in trackedRects)
+                for (int j = rectXMin; j < rectXMax; j++)
                 {
-                    if (rect.Contains(point))
-                    {
-                        pixels[i, j] = 1;
-                        break;
-                    }
+                    pixels[i, j] = 1;
                 }
             }
         }

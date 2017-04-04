@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<QCARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="qcar_config.xsd">
+  <Tracking>
+    <ImageTarget name="easter-eggs-2145667_1920" size="0.300000 0.189844" />
+    <ImageTarget name="rolex-2171960_1920" size="0.300000 0.198594" />
+    <ImageTarget name="kaiser-wilhelm-2176402_1920" size="0.300000 0.200000" />
+    <ImageTarget name="japanese-cherry-trees-2168858_1920" size="0.300000 0.200000" />
+    <ImageTarget name="house-2187170_1920" size="0.300000 0.200000" />
+    <ImageTarget name="hill-2165759_1920" size="0.300000 0.200156" />
+    <ImageTarget name="grey-seal-2164736_1920" size="0.300000 0.200156" />
+    <ImageTarget name="forest-2165911_1920" size="0.300000 0.225000" />
+    <ImageTarget name="easter-eggs-2168521_1920" size="0.300000 0.200000" />
+    <ImageTarget name="asparagus-2169305_1920" size="0.300000 0.200000" />
+  </Tracking>
+</QCARConfig>
