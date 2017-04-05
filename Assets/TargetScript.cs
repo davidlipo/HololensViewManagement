@@ -20,7 +20,7 @@ public class TargetScript : MonoBehaviour {
 	void Update() {
         if (trackingCubeRenderer.enabled)
         {
-            bounds = GetScreenBounds(trackingCube, cam);
+            bounds = GetScreenBounds(trackingCube.GetComponentInChildren<Renderer>(), cam);
         }
         else
         {
@@ -44,12 +44,12 @@ public class TargetScript : MonoBehaviour {
     }
 
     //http://answers.unity3d.com/questions/49943/is-there-an-easy-way-to-get-on-screen-render-size.html
-    public static Rect GetScreenBounds(GameObject go, Camera cam)
+    public static Rect GetScreenBounds(Renderer renderer, Camera cam)
     {
-        if (go)
+        if (renderer)
         {
-            Vector3 cen = go.GetComponentInChildren<Renderer>().bounds.center;
-            Vector3 ext = go.GetComponentInChildren<Renderer>().bounds.extents;
+            Vector3 cen = renderer.bounds.center;
+            Vector3 ext = renderer.bounds.extents;
             Vector2[] extentPoints = new Vector2[8]
              {
                    cam.WorldToScreenPoint(new Vector3(cen.x-ext.x, cen.y-ext.y, cen.z-ext.z)),

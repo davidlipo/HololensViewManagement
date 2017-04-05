@@ -101,7 +101,7 @@ public class ObjectLabel : MonoBehaviour
                 }
                 else if (currLabel.GetComponentInChildren<TextMesh>().text != "")
                 {
-                    Rect labelRect = TargetScript.GetScreenBounds(currLabel, cam);
+                    Rect labelRect = TargetScript.GetScreenBounds(currLabel.GetComponentInChildren<Renderer>(), cam);
                     if (!currLabel.GetComponent<Renderer>().enabled ||
                         (delay > DELAY_BETWEEN_CHECK && !isCurrentLocationEmpty(rectsTakenOnScreen, labelRect)))
                     {
@@ -117,7 +117,7 @@ public class ObjectLabel : MonoBehaviour
                         currLabel.GetComponent<LabelPositioner>().setTargetPosition(worldLocation);
                         currLabel.transform.parent = currObj.transform;
                         currLabel.GetComponent<Renderer>().enabled = true;
-                        labelRect = TargetScript.GetScreenBounds(currLabel, cam);
+                        labelRect = TargetScript.GetScreenBounds(currLabel.GetComponentInChildren<Renderer>(), cam);
                     }
                     rectsTakenOnScreen.Add(labelRect);
                     emptyRects = findEmptySpace(rectsTakenOnScreen);

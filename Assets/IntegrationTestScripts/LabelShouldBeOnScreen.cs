@@ -24,7 +24,7 @@ public class LabelShouldBeOnScreen : MonoBehaviour {
             if (child.tag == "Label")
             {
                 currLabel = child.gameObject;
-                Rect obj = TargetScript.GetScreenBounds(currLabel, cam);
+                Rect obj = TargetScript.GetScreenBounds(currLabel.GetComponentInChildren<Renderer>(), cam);
                 if (screen.Contains(new Vector2(obj.xMin, obj.yMin)) && screen.Contains(new Vector2(obj.xMax, obj.yMax)))
                 {
                     IntegrationTest.Pass();

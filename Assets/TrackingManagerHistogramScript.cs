@@ -74,7 +74,7 @@ public class TrackingManagerHistogramScript : MonoBehaviour
                 }
                 else if (currLabel.GetComponentInChildren<TextMesh>().text != "")
                 {
-                    Rect labelRect = TargetScript.GetScreenBounds(currLabel, cam);
+                    Rect labelRect = TargetScript.GetScreenBounds(currLabel.GetComponentInChildren<Renderer>(), cam);
                     if (!currLabel.GetComponent<Renderer>().enabled ||
                         (delay > DELAY_BETWEEN_CHECK && !isCurrentLocationEmtpy(pixels, labelRect)))
                     {
@@ -89,7 +89,7 @@ public class TrackingManagerHistogramScript : MonoBehaviour
                         currLabel.GetComponent<LabelPositioner>().setTargetPosition(worldLocation);
                         currLabel.transform.parent = currObj.transform;
                         currLabel.GetComponent<Renderer>().enabled = true;
-                        labelRect = TargetScript.GetScreenBounds(currLabel, cam);
+                        labelRect = TargetScript.GetScreenBounds(currLabel.GetComponentInChildren<Renderer>(), cam);
                     }
                     pixels = addToPixelMap(pixels, labelRect);
                     currLabel.transform.rotation = Quaternion.LookRotation(-cam.transform.up, -cam.transform.forward);

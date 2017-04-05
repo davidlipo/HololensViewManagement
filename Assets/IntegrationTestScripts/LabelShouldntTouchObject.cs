@@ -11,7 +11,7 @@ public class LabelShouldntTouchObject : MonoBehaviour {
     void Start()
     {
         cam = GameObject.FindWithTag("ARCamera").transform.GetChild(0).GetComponent<Camera>();
-        gameObjLoc = TargetScript.GetScreenBounds(gameObject, cam);
+        gameObjLoc = TargetScript.GetScreenBounds(gameObject.GetComponentInChildren<Renderer>(), cam);
     }
 
     // Update is called once per frame
@@ -24,7 +24,7 @@ public class LabelShouldntTouchObject : MonoBehaviour {
             if (child.tag == "Label")
             {
                 currLabel = child.gameObject;
-                if (!gameObjLoc.Overlaps(TargetScript.GetScreenBounds(currLabel, cam)))
+                if (!gameObjLoc.Overlaps(TargetScript.GetScreenBounds(currLabel.GetComponentInChildren<Renderer>(), cam)))
                 {
                     IntegrationTest.Pass();
                 }
