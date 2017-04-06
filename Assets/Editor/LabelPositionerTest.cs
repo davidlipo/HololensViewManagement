@@ -12,6 +12,6 @@ public class LabelPositionerTest
         Vector3 pos = new Vector3(1, 2, 3);
         label.setTargetPosition(pos);
 
-        Assert.AreEqual(label.targetPosition, text);
+        Assert.AreEqual(label.targetPosition, pos);
     }
 }

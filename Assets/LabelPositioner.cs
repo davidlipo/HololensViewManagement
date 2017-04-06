@@ -3,7 +3,7 @@ using System.Collections;
 
 public class LabelPositioner : MonoBehaviour {
 
-    private Vector3? targetPosition;
+    public Vector3? targetPosition;
     private int speed;
 
 	// Use this for initialization
