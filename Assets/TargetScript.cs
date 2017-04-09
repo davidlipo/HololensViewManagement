@@ -14,7 +14,7 @@ public class TargetScript : MonoBehaviour {
     {
         if (UnityEngine.VR.VRDevice.isPresent)
         {
-            cam = GameObject.FindWithTag("ARCamera").transform.GetChild(1).GetComponent<Camera>();
+            cam = GameObject.FindWithTag("ARCamera").transform.GetChild(0).GetComponent<Camera>();
         }
         else
         {
