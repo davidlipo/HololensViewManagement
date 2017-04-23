@@ -34,6 +34,7 @@ public class TrackingManagerHistogramScript : MonoBehaviour
         objectLabels = new List<List<ObjectLabelHistogram>>();
         for (int i = 0; i < trackedObjs.Length; i++)
         {
+            // Create a label for each target object, taking the priority into account
             int index = trackedObjs[i].GetComponent<TargetScript>().getPriority();
             int newIndex = 0;
             while (objectLabels.Count < index) objectLabels.Add(new List<ObjectLabelHistogram>());
@@ -50,17 +51,9 @@ public class TrackingManagerHistogramScript : MonoBehaviour
             objectLabels[index][newIndex].label.GetComponentInChildren<TextMesh>().text = trackedObjs[i].GetComponent<TargetScript>().getLabelMessage();
             objectLabels[index][newIndex].label.GetComponent<Renderer>().enabled = false;
         }
-        if (UnityEngine.VR.VRDevice.isPresent)
-        {
-            cam = GameObject.FindWithTag("ARCamera").transform.GetChild(1).GetComponent<Camera>();
-        }
-        else
-        {
-            cam = GameObject.FindWithTag("ARCamera").transform.GetChild(0).GetComponent<Camera>();
-        }
+        cam = GameObject.FindWithTag("ARCamera").transform.GetChild(0).GetComponent<Camera>();
     }
 
-    // Update is called once per frame
     void Update()
     {
         delay++;
@@ -74,6 +67,7 @@ public class TrackingManagerHistogramScript : MonoBehaviour
                 Rect rect = currObj.GetComponent<TargetScript>().getBounds();
                 if (rect.Equals(new Rect()))
                 {
+                    // If the object isn't on screen, hide the label
                     if (currLabel.GetComponent<Renderer>().enabled)
                     {
                         currLabel.GetComponent<Renderer>().enabled = false;
@@ -88,19 +82,26 @@ public class TrackingManagerHistogramScript : MonoBehaviour
                         Vector2 size = new Vector2(120, 80);
                         if (currLabel.GetComponent<Renderer>().enabled)
                         {
+                            // Find the label size if it's already been placed
                             size = new Vector2(labelRect.width, labelRect.height);
                         }
+                        // Find the 2D screen location to use
                         Vector2 locationToUse = placeLabelByLargestRectangle((int)size.y, (int)size.x, rect.center, rect.size);
+                        // Check how far away the target object is from the camera
                         float distanceToPlace = Vector3.Distance(cam.transform.position, currObj.transform.position);
+                        // Place the label in the same z-axis as the object and in the equivalent 3D location as the 2D point
                         Vector3 worldLocation = cam.ScreenToWorldPoint(new Vector3(locationToUse.x, locationToUse.y, distanceToPlace));
                         currLabel.GetComponent<LabelPositioner>().setTargetPosition(worldLocation);
                         currLabel.transform.parent = currObj.transform;
                         currLabel.GetComponent<Renderer>().enabled = true;
                         labelRect = TargetScript.GetScreenBounds(currLabel.GetComponentInChildren<Renderer>(), cam);
                     }
+                    // Add the label to the pixel map so future labels don't overlap it
                     pixels = addToPixelMap(pixels, labelRect);
+                    // Rotate the label to face the camera
                     currLabel.transform.rotation = Quaternion.LookRotation(-cam.transform.up, -cam.transform.forward);
 
+                    // Draw the line from the target object to the label
                     LineRenderer lineRenderer = currLabel.GetComponentInChildren<LineRenderer>();
                     lineRenderer.SetPosition(0, currObj.transform.position);
                     lineRenderer.SetPosition(1, currLabel.transform.position);
@@ -116,11 +117,13 @@ public class TrackingManagerHistogramScript : MonoBehaviour
 
     bool isCurrentLocationEmtpy(int[,] map, Rect rect)
     {
+        // Mark a location as taken if the rectangle goes off the screen
         if (rect == null || rect.Equals(new Rect()) || rect.yMin < 0 || rect.yMax > height || rect.xMin < 0 || rect.xMax > width)
         {
             return false;
         }
 
+        // Check if any pixel within the target rectangle is taken
         for (int i = (int)rect.yMin; i < rect.yMax; i++)
         {
             for (int j = (int)rect.xMin; j < rect.xMax; j++)
@@ -139,6 +142,7 @@ public class TrackingManagerHistogramScript : MonoBehaviour
         List<Rect> trackedRects = new List<Rect>();
         int[,] pixels = new int[height, width];
 
+        // Mark every pixel as empty
         for (int i = 0; i < height; i++)
         {
             for (int j = 0; j < width; j++)
@@ -155,6 +159,7 @@ public class TrackingManagerHistogramScript : MonoBehaviour
             }
         }
 
+        // Mark each pixel within each rectangle as taken
         foreach (Rect rect in trackedRects)
         {
             int rectYMin = Mathf.Max((int)rect.yMin, 0);
@@ -179,6 +184,7 @@ public class TrackingManagerHistogramScript : MonoBehaviour
             return map;
         }
 
+        // Mark every pixel within the rectangle as taken
         for (int i = Mathf.Max((int)rect.y, 0); i < Mathf.Min(rect.y + rect.height, map.GetLength(0)); i++)
         {
             for (int j = Mathf.Max((int)rect.x, 0); j < Mathf.Min(rect.x + rect.width, map.GetLength(1)); j++)
@@ -192,12 +198,15 @@ public class TrackingManagerHistogramScript : MonoBehaviour
     Vector2 placeLabelByLargestRectangle(int aimHeight, int aimWidth, Vector2 objLoc, Vector2 objSize)
     {
         int[,] histogram = new int[height, width];
+        // Generate the histogram
         for (int i = 0; i < height; i++)
         {
             for (int j = 0; j < width; j++)
             {
                 if (pixels[i, j] == 0)
                 {
+                    // Mark as 0 if the pixel is taken
+                    // Mark as 1 more than the pixel value above otherwise
                     histogram[i, j] = 1 + (j > 0 ? histogram[i, j - 1] : 0);
                 }
                 else
@@ -212,7 +221,7 @@ public class TrackingManagerHistogramScript : MonoBehaviour
         float halfWidthPlusLabelWidth = aimWidth + objSize.x / 2;
         if (height > currentAim.y + halfHeightPlusLabelHeight)
         {
-            // Top
+            // Place the label above the object
             Vector2? spaceAvailable =
                 trySpaceWithSetY(new Vector2(currentAim.x, currentAim.y + halfHeightPlusLabelHeight), histogram, aimWidth, aimHeight);
             if (spaceAvailable != null)
@@ -222,7 +231,7 @@ public class TrackingManagerHistogramScript : MonoBehaviour
         }
         if (currentAim.y - objSize.y / 2 > aimHeight)
         {
-            // Bottom
+            // Place the label below the object
             Vector2? spaceAvailable =
                 trySpaceWithSetY(new Vector2(currentAim.x, currentAim.y - objSize.y / 2 - 10), histogram, aimWidth, aimHeight);
             if (spaceAvailable != null)
@@ -232,7 +241,7 @@ public class TrackingManagerHistogramScript : MonoBehaviour
         }
         if (currentAim.x > halfWidthPlusLabelWidth)
         {
-            // Left
+            // Place the label to the left of the object
             Vector2? spaceAvailable =
                 trySpaceWithSetX(new Vector2(currentAim.x - halfWidthPlusLabelWidth, currentAim.y), histogram, aimWidth, aimHeight);
             if (spaceAvailable != null)
@@ -242,7 +251,7 @@ public class TrackingManagerHistogramScript : MonoBehaviour
         }
         if (width > currentAim.x + halfHeightPlusLabelHeight)
         {
-            // Right
+            // Place the label to the right the object
             Vector2? spaceAvailable =
                 trySpaceWithSetX(new Vector2(currentAim.x + objSize.x / 2, currentAim.y), histogram, aimWidth, aimHeight);
             if (spaceAvailable != null)
@@ -275,10 +284,12 @@ public class TrackingManagerHistogramScript : MonoBehaviour
 
                 if (countOnRow > aimWidth)
                 {
+                    // Location is available
                     return new Vector2(j - aimWidth, currentAim.y);
                 }
                 else if (j > currentAim.x)
                 {
+                    // Location is taken so return how many pixels to skip
                     return maxMinNum > 0 ? maxMinNum : aimHeight - 1;
                 }
                 countOnRow = 0;
@@ -289,6 +300,7 @@ public class TrackingManagerHistogramScript : MonoBehaviour
 
     Vector2? trySpaceWithSetY(Vector2 currentAim, int[,] histogram, int aimWidth, int aimHeight)
     {
+        // Check if location is available
         object ret = trySpaceWithSetYOrReturnMinHeight(currentAim, histogram, aimWidth, aimHeight);
         if (ret is int)
         {

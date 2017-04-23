@@ -24,13 +24,15 @@ public class LabelPositioner : MonoBehaviour {
         {
             if (alpha < 1)
             {
+                // Fade in
                 setVisibility(Mathf.Min(alpha + fadeSpeed, 1));
             }
         } else {
             if (alpha > 0)
             {
+                // Fade out
                 setVisibility(Mathf.Max(alpha - fadeSpeed, 0));
-            } else if (alpha == 0)
+            } else if (alpha <= 0)
             {
                 GetComponent<Renderer>().enabled = false;
             }
@@ -40,6 +42,7 @@ public class LabelPositioner : MonoBehaviour {
         {
             if (transform.position != targetPosition)
             {
+                // Move the label towards the new location if it's not there already
                 transform.position = Vector3.MoveTowards((Vector3)transform.position, (Vector3)targetPosition, speed * Time.deltaTime);
             }
             else

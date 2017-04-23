@@ -36,6 +36,7 @@ public class ObjectLabel : MonoBehaviour
         objectLabels = new List<List<ObjectLabel>>();
         for (int i = 0; i < trackedObjs.Length; i++)
         {
+            // Create a label for each target object, taking the priority into account
             int index = trackedObjs[i].GetComponent<TargetScript>().getPriority();
             int newIndex = 0;
             while (objectLabels.Count < index) objectLabels.Add(new List<ObjectLabel>());
@@ -52,14 +53,7 @@ public class ObjectLabel : MonoBehaviour
             objectLabels[index][newIndex].label.GetComponentInChildren<TextMesh>().text = trackedObjs[i].GetComponent<TargetScript>().getLabelMessage();
             objectLabels[index][newIndex].label.GetComponent<Renderer>().enabled = false;
         }
-        if (UnityEngine.VR.VRDevice.isPresent)
-        {
-            cam = GameObject.FindWithTag("ARCamera").transform.GetChild(0).GetComponent<Camera>();
-        }
-        else
-        {
-            cam = GameObject.FindWithTag("ARCamera").transform.GetChild(0).GetComponent<Camera>();
-        }
+        cam = GameObject.FindWithTag("ARCamera").transform.GetChild(0).GetComponent<Camera>();
     }
 
     private static readonly Texture2D backgroundTexture = Texture2D.whiteTexture;
@@ -69,6 +63,7 @@ public class ObjectLabel : MonoBehaviour
     {
         if (DEBUG_MODE)
         {
+            // Show the colour overlay if debug mode is enabled
             GUI.backgroundColor = new Color(1, 0, 0, 0.3f);
             foreach (Rect rect in rectsTakenOnScreen)
             {
@@ -83,7 +78,6 @@ public class ObjectLabel : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
     void Update()
     {
         delay++;
@@ -101,35 +95,43 @@ public class ObjectLabel : MonoBehaviour
                 Rect rect = currObj.GetComponent<TargetScript>().getBounds();
                 if (rect.Equals(new Rect()))
                 {
-                    if (currLabel.GetComponent<Renderer>().enabled)
+                    // If the object isn't on screen, hide the label
+                    if (currLabel.GetComponent<LabelPositioner>().isShown())
                     {
-                        currLabel.GetComponent<Renderer>().enabled = false;
+                        currLabel.GetComponent<LabelPositioner>().hide();
                     }
                 }
                 else if (currLabel.GetComponentInChildren<TextMesh>().text != "")
                 {
                     Rect labelRect = TargetScript.GetScreenBounds(currLabel.GetComponentInChildren<Renderer>(), cam);
-                    if (!currLabel.GetComponent<Renderer>().enabled ||
+                    if (!currLabel.GetComponent<LabelPositioner>().isShown() ||
                         (delay > DELAY_BETWEEN_CHECK && !isCurrentLocationEmpty(rectsTakenOnScreen, labelRect)))
                     {
                         Vector2 size = initLabelSize;
-                        if (currLabel.GetComponent<Renderer>().enabled)
+                        if (currLabel.GetComponent<LabelPositioner>().isShown())
                         {
+                            // Find the label size if it's already been placed
                             size = new Vector2(labelRect.width, labelRect.height);
                         }
+                        // Find the 2D screen location to use
                         Vector2 locationToUse = placeLabel(size.y, size.x, rect.center, emptyRects, rectsTakenOnScreen);
+                        // Check how far away the target object is from the camera
                         float distanceToPlace = Vector3.Distance(cam.transform.position, currObj.transform.position);
                         Vector3 screenPoint = new Vector3(locationToUse.x + size.x/2, Screen.height - locationToUse.y - size.y / 2, distanceToPlace);
+                        // Place the label in the same z-axis as the object and in the equivalent 3D location as the 2D point
                         Vector3 worldLocation = cam.ScreenToWorldPoint(screenPoint);
                         currLabel.GetComponent<LabelPositioner>().setTargetPosition(worldLocation);
                         currLabel.transform.parent = currObj.transform;
-                        currLabel.GetComponent<Renderer>().enabled = true;
+                        currLabel.GetComponent<LabelPositioner>().show();
                         labelRect = TargetScript.GetScreenBounds(currLabel.GetComponentInChildren<Renderer>(), cam);
                     }
+                    // Add the label to the list of locations not available
                     rectsTakenOnScreen.Add(labelRect);
                     emptyRects = findEmptySpace(rectsTakenOnScreen);
+                    // Rotate the label to face the camera
                     currLabel.transform.rotation = Quaternion.LookRotation(-cam.transform.up, -cam.transform.forward);
 
+                    // Draw the line from the target object to the label
                     LineRenderer lineRenderer = currLabel.GetComponentInChildren<LineRenderer>();
                     lineRenderer.SetPosition(0, currObj.transform.position);
                     lineRenderer.SetPosition(1, currLabel.transform.position);
@@ -146,6 +148,7 @@ public class ObjectLabel : MonoBehaviour
     void setScreenRect()
     {
         screenRect = new Rect();
+        // Create a rectangle smaller than the screen size that still includes every on-screen rectangle
         for (int i = 0; i < objectLabels.Count; i++)
         {
             for (int j = 0; j < objectLabels[i].Count; j++)
@@ -209,6 +212,7 @@ public class ObjectLabel : MonoBehaviour
 
     Vector2 placeLabel(float height, float width, Vector2 targetPos, List<Rect> emptyRects, List<Rect> rectsTakenOnScreen)
     {
+        // Order the rectangles so that the potential most optimal location is considered first
         emptyRects.Sort((a, b) => compareDistances(a, b, targetPos));
         foreach (Rect rect in emptyRects)
         {
@@ -223,6 +227,7 @@ public class ObjectLabel : MonoBehaviour
                 ys = new float[] { rect.center.y, rect.yMax - height, rect.yMin };
             }
             
+            // Check that the current location doesn't overlap with any taken locations
             foreach (float x in xs)
             {
                 foreach (float y in ys)
@@ -254,11 +259,13 @@ public class ObjectLabel : MonoBehaviour
 
     int compareDistances(Rect a, Rect b, Vector2 targetPos)
     {
+        // Check which rectangle is closer to the target object
         return (int)(minDistanceToRect(a, targetPos) - minDistanceToRect(b, targetPos));
     }
 
     float minDistanceToRect(Rect a, Vector2 targetPos)
     {
+        // Find the minimum distance from one object to another
         float minDistance = -1;
         float currDistance;
         foreach (float x in new float[] { a.center.x, a.xMin, a.xMax })
@@ -288,6 +295,7 @@ public class ObjectLabel : MonoBehaviour
 
     List<Rect> findInverseRectangles(Rect rect, Rect removeRect)
     {
+        // Find the inverse rectangles of a specific taken rectangle
         List<Rect> rects = new List<Rect>();
 
         removeRect = intersects(removeRect, rect);
@@ -310,6 +318,7 @@ public class ObjectLabel : MonoBehaviour
 
     List<Rect> findEmptySpace(List<Rect> rects)
     {
+        // Find the list of inverse rectangles
         List<Rect> inverseRects = new List<Rect>();
         inverseRects.Add(screenRect);
 
@@ -329,6 +338,7 @@ public class ObjectLabel : MonoBehaviour
 
     List<Rect> findTakenSpaces()
     {
+        // Find every taken location on screen
         List<Rect> rects = new List<Rect>();
 
         for (int i = 0; i < objectLabels.Count; i++)

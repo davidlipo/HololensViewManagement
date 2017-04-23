@@ -16,7 +16,6 @@ public class TrackingManagerBruteForceScript : MonoBehaviour
 
     private const int DELAY_BETWEEN_CHECK = 20;
 
-    // Use this for initialization
     void Start()
     {
         width = Screen.width;
@@ -25,21 +24,14 @@ public class TrackingManagerBruteForceScript : MonoBehaviour
         objectLabels = new GameObject[trackedObjs.Length];
         for (int i = 0; i < objectLabels.Length; i++)
         {
+            // Create a label for each target object
             objectLabels[i] = (GameObject)Instantiate(label, new Vector3(0, 0, 0), Quaternion.identity);
             objectLabels[i].GetComponentInChildren<TextMesh>().text = trackedObjs[i].GetComponent<TargetScript>().getLabelMessage();
             objectLabels[i].GetComponent<Renderer>().enabled = false;
         }
-        if (UnityEngine.VR.VRDevice.isPresent)
-        {
-            cam = GameObject.FindWithTag("ARCamera").transform.GetChild(1).GetComponent<Camera>();
-        }
-        else
-        {
-            cam = GameObject.FindWithTag("ARCamera").transform.GetChild(0).GetComponent<Camera>();
-        }
+        cam = GameObject.FindWithTag("ARCamera").transform.GetChild(0).GetComponent<Camera>();
     }
 
-    // Update is called once per frame
     void Update()
     {
         delay++;
@@ -50,6 +42,7 @@ public class TrackingManagerBruteForceScript : MonoBehaviour
             Rect rect = trackedObjs[i].GetComponent<TargetScript>().getBounds();
             if (rect.Equals(new Rect()))
             {
+                // If the object isn't on screen, hide the label
                 objectLabels[i].GetComponent<Renderer>().enabled = false;
             }
             else
@@ -57,14 +50,18 @@ public class TrackingManagerBruteForceScript : MonoBehaviour
                 if (!objectLabels[i].GetComponent<Renderer>().enabled ||
                     (delay > DELAY_BETWEEN_CHECK && !isCurrentLocationEmtpy(100, 200, cam.WorldToScreenPoint(objectLabels[i].transform.position))))
                 {
+                    // Find the 2D screen location to use
                     Vector2 locationToUse = placeLabel(100, 200, rect.center);
+                    // Check how far away the target object is from the camera
                     float distanceToPlace = Vector3.Distance(Camera.main.transform.position, trackedObjs[i].transform.position);
+                    // Place the label in the same z-axis as the object and in the equivalent 3D location as the 2D point
                     Vector3 worldLocation = cam.ScreenToWorldPoint(new Vector3(locationToUse.x, locationToUse.y, distanceToPlace));
                     objectLabels[i].transform.position = worldLocation;
                     objectLabels[i].transform.parent = trackedObjs[i].transform;
                     objectLabels[i].GetComponent<Renderer>().enabled = true;
                 }
             }
+            // Rotate the label to face the camera
             objectLabels[i].transform.rotation = Quaternion.LookRotation(-Camera.main.transform.up, -Camera.main.transform.forward);
         }
 
@@ -76,6 +73,7 @@ public class TrackingManagerBruteForceScript : MonoBehaviour
 
     bool isCurrentLocationEmtpy(int aimHeight, int aimWidth, Vector2 locationToUse)
     {
+        // Mark a location as taken if the rectangle goes off the screen
         if (locationToUse == null ||
            locationToUse.x > Screen.width - aimWidth ||
            locationToUse.x < 0 ||
@@ -85,6 +83,7 @@ public class TrackingManagerBruteForceScript : MonoBehaviour
             return false;
         }
 
+        // Check if any pixel within the target rectangle is taken
         for (int k = (int)locationToUse.y; k < (int)locationToUse.y + aimHeight; k++)
         {
             for (int l = (int)locationToUse.x; l < (int)locationToUse.x + aimWidth; l++)
@@ -103,6 +102,7 @@ public class TrackingManagerBruteForceScript : MonoBehaviour
         List<Rect> trackedRects = new List<Rect>();
         int[,] pixels = new int[height, width];
 
+        // Mark every pixel as empty
         for (int i = 0; i < height; i++)
         {
             for (int j = 0; j < width; j++)
@@ -116,6 +116,7 @@ public class TrackingManagerBruteForceScript : MonoBehaviour
             trackedRects.Add(trackedObjs[k].GetComponent<TargetScript>().getBounds());
         }
 
+        // Mark each pixel within each rectangle as taken
         foreach (Rect rect in trackedRects)
         {
             int rectYMin = Mathf.Max((int)rect.yMin, 0);
@@ -147,6 +148,7 @@ public class TrackingManagerBruteForceScript : MonoBehaviour
             for (int j = 0; j < noColumns; j++)
             {
                 int inBlock = 0;
+                // For each potential label location, check how many taken pixels it will cover
                 for (int k = i * aimHeight; k < (i + 1) * aimHeight; k++)
                 {
                     for (int l = j * aimWidth; l < (j + 1) * aimWidth; l++)
@@ -157,8 +159,10 @@ public class TrackingManagerBruteForceScript : MonoBehaviour
                 int blockNo = i * noColumns + j;
                 int distanceFromObjX = Mathf.Abs(Mathf.FloorToInt(objLoc.x / aimWidth) - j);
                 int distanceFromObjY = Mathf.Abs(Mathf.FloorToInt(objLoc.y / aimHeight) - i);
+                // On top of the taken pixels, add on the distance from the target object
                 inBlock += distanceFromObjX * aimWidth + distanceFromObjY * aimHeight;
                 fullnessOfBlock[blockNo] = inBlock;
+                // If this location is better than all previous ones, store it as the best so far
                 if (inBlock < emptiestValue)
                 {
                     emptiestValue = inBlock;

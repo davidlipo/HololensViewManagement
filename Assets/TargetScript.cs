@@ -12,14 +12,7 @@ public class TargetScript : MonoBehaviour {
 
     void Start()
     {
-        if (UnityEngine.VR.VRDevice.isPresent)
-        {
-            cam = GameObject.FindWithTag("ARCamera").transform.GetChild(0).GetComponent<Camera>();
-        }
-        else
-        {
-            cam = GameObject.FindWithTag("ARCamera").transform.GetChild(0).GetComponent<Camera>();
-        }
+        cam = GameObject.FindWithTag("ARCamera").transform.GetChild(0).GetComponent<Camera>();
         trackingCube = transform.FindChild("Cube").gameObject;
         trackingCubeRenderer = trackingCube.GetComponent<Renderer>();
     }
